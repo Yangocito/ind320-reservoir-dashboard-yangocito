@@ -14,5 +14,6 @@ st.markdown(
     **Planned extension:** In a later project part, the local CSV can be replaced
     by an online database without changing the user interface.
     """
+)
 
 
