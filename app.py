@@ -24,10 +24,7 @@ st.info(
 
 st.sidebar.header("Navigation")
 st.sidebar.write("Use the page links below or Streamlit's page menu.")
-st.sidebar.page_link("app.py", label="Home", icon="🏠")
-st.sidebar.page_link("pages/1_Data_table.py", label="Data table", icon="📋")
-st.sidebar.page_link("pages/2_Plots.py", label="Plots", icon="📈")
-st.sidebar.page_link("pages/3_About.py", label="About", icon="ℹ️")
+
 
 st.markdown("### Project overview")
 col1, col2, col3 = st.columns(3)
