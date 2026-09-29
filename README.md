@@ -19,8 +19,5 @@ English header names, previews, plots, AI-use statement and the compulsory log.
 
 ## Links
 
-Replace these placeholders before submission:
-
-- GitHub repository: https://github.com/YOUR_USERNAME/ind320-reservoir-dashboard
-- Streamlit app: https://YOUR_PROJECT.streamlit.app/
+- Streamlit app: https://YOUR_PROJECT.streamlit.app/](https://ind320-reservoir-dashboard-yangocito-jqlwog89hlllmliwtrhsmd.streamlit.app/)
 
