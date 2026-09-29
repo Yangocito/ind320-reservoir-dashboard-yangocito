@@ -22,8 +22,7 @@ st.info(
     "sparkline. Then open **Plots** to choose a variable and a time period."
 )
 
-st.sidebar.header("Navigation")
-st.sidebar.write("Use the page links below or Streamlit's page menu.")
+
 
   
 st.markdown("### Project overview")
