@@ -19,5 +19,5 @@ English header names, previews, plots, AI-use statement and the compulsory log.
 
 ## Links
 
-- Streamlit app: https://YOUR_PROJECT.streamlit.app/](https://ind320-reservoir-dashboard-yangocito-jqlwog89hlllmliwtrhsmd.streamlit.app/)
+- Streamlit app: https://ind320-reservoir-dashboard-yangocito-jqlwog89hlllmliwtrhsmd.streamlit.app/
 
