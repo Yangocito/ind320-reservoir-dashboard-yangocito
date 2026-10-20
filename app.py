@@ -12,14 +12,13 @@ st.set_page_config(
 st.title("IND320: Reservoir data dashboard")
 st.subheader("Data to decision – compulsory project work")
 st.write(
-    "This app explores Norwegian reservoir measurements from the IND320 course "
-    "dataset. Use the pages in the sidebar to inspect the imported data and "
-    "visualise monthly developments."
+    "Explore Norwegian reservoir statistics from NVE's public API and "
+    "cross-border electricity flows from ENTSO-E through MongoDB."
 )
 
 st.info(
-    "Start with **Data table** to see the imported columns and the first-month "
-    "sparkline. Then open **Plots** to choose a variable and a time period."
+    "Start with **Data table** or **Plots** to explore NVE's areas. "
+    "Open **Cross-border flows** to compare imports and exports."
 )
 
 
@@ -28,9 +27,9 @@ st.info(
 st.markdown("### Project overview")
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("Data source", "reservoirs.csv")
+    st.metric("Reservoir source", "NVE API")
 with col2:
-    st.metric("Analysis level", "Monthly means")
+    st.metric("Flow source", "ENTSO-E")
 with col3:
-    st.metric("Measurements", "5")
+    st.metric("Stored flow data", "MongoDB")
 
