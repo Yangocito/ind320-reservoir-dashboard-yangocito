@@ -1,0 +1,8 @@
+-r requirements.txt
+jupyter>=1.0,<2
+ipykernel>=6.29,<8
+nbconvert>=7.16,<9
+pyspark>=3.5,<4
+cassandra-driver>=3.29,<4
+# Cassandra's asyncore fallback needs this on Python 3.12+.
+pyasyncore>=1.0,<2; python_version >= "3.12"

@@ -1,67 +1,57 @@
-"""Data table page: one row per imported data column plus a first-month sparkline."""
+"""Area-aware NVE data overview with a sparkline per area number."""
 
 import pandas as pd
 import streamlit as st
 
-from utils import DISPLAY_NAMES, MEASUREMENT_COLUMNS, _prepare_data
-from utils import monthly_measurements
+from utils import DISPLAY_NAMES, area_series, fetch_area_names, fetch_reservoirs
+
+st.title("NVE reservoir data")
+st.caption("Weekly observations fetched from the live Magasinstatistikk API.")
 
 
-st.title("Imported data")
-st.caption("Each row represents one column from reservoirs.csv.")
-
-
-@st.cache_data
+@st.cache_data(ttl=3600, show_spinner="Fetching NVE reservoir data…")
 def load_data() -> pd.DataFrame:
-    """Cache the local CSV read so the app does not reload it on every interaction."""
-    return _prepare_data()
+    return fetch_reservoirs()
 
 
-data = load_data()
-monthly = monthly_measurements(data)
-first_month = data["date"].min().to_period("M")
-first_month_data = data[data["date"].dt.to_period("M") == first_month]
+@st.cache_data(ttl=86400)
+def load_names() -> dict:
+    return fetch_area_names()
 
-summary_rows = []
-for column in data.columns:
-    if column in MEASUREMENT_COLUMNS:
-        values = first_month_data[column].dropna().round(4).tolist()
-        first_month_average = first_month_data[column].mean()
-        description = DISPLAY_NAMES[column]
-    else:
-        values = []
-        first_month_average = None
-        description = "Metadata / calendar field"
 
-    summary_rows.append(
-        {
-            "Column": column,
-            "Description": description,
-            "Data type": str(data[column].dtype),
-            "Non-null values": int(data[column].notna().sum()),
-            f"Average in {first_month}": first_month_average,
-            "First month trend": values,
-        }
-    )
+try:
+    data = load_data()
+except Exception as exc:
+    st.error(f"Could not read NVE data: {exc}")
+    st.stop()
+try:
+    names = load_names()
+except Exception:
+    names = {}
 
-summary = pd.DataFrame(summary_rows)
-st.dataframe(
-    summary,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "First month trend": st.column_config.LineChartColumn(
-            "First month trend",
-            help="Weekly observations in the first calendar month for measurement columns.",
-        ),
-        f"Average in {first_month}": st.column_config.NumberColumn(format="%.4f"),
-    },
-)
+area_type = st.radio("Area type", ["EL", "NO", "VASS"], horizontal=True)
+measurement = st.selectbox("Measurement for mini charts", list(DISPLAY_NAMES),
+                           format_func=lambda value: DISPLAY_NAMES[value])
+series = area_series(data, area_type, measurement, names)
+if series.empty:
+    st.warning("No observations found for this area type.")
+    st.stop()
 
-st.write(
-    f"The raw dataset contains **{len(data):,} rows** from "
-    f"**{data['date'].min().date()}** to **{data['date'].max().date()}**."
-)
-
-with st.expander("Preview of the raw imported rows"):
-    st.dataframe(data.head(20), use_container_width=True, hide_index=True)
+# One table row (and LineChartColumn) per associated NVE area number.
+rows = []
+for column in series:
+    values = series[column].dropna()
+    rows.append({
+        "Area": column,
+        "Weekly observations": len(values),
+        "Latest observation": values.index[-1].date() if not values.empty else None,
+        "Latest value": float(values.iloc[-1]) if not values.empty else None,
+        "Trend": values.tail(16).round(4).tolist(),
+    })
+st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True,
+             column_config={"Trend": st.column_config.LineChartColumn(
+                 "Last 16 observations", help=f"Weekly {DISPLAY_NAMES[measurement]} for each area number"
+             )})
+st.caption(f"{len(data):,} rows across all area types, {data['date'].min().date()}–{data['date'].max().date()}.")
+with st.expander("Inspect API rows for the selected area type"):
+    st.dataframe(data[data["area_type"] == area_type].tail(100), use_container_width=True)

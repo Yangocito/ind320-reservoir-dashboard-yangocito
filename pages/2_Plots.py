@@ -1,51 +1,70 @@
-"""Plot page with a column selector and a month selection slider."""
+"""Download-window selection and one reservoir plot line per NVE area number."""
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
 
-from utils import DISPLAY_NAMES, MEASUREMENT_COLUMNS, _prepare_data
-from utils import make_measurement_plot, monthly_measurements
-
+from utils import DISPLAY_NAMES, area_series, fetch_area_names, fetch_reservoirs
 
 st.title("Reservoir measurements")
-st.write(
-    "The chart uses monthly means. When all measurements are selected, values "
-    "are min–max scaled to 0–1 because the variables use different units."
-)
+st.write("Select a date window, area type and variable. Each area number has its own line.")
 
 
-@st.cache_data
+@st.cache_data(ttl=3600, show_spinner="Fetching NVE reservoir data…")
 def load_data() -> pd.DataFrame:
-    """Cache the local CSV read for faster app interaction."""
-    return _prepare_data()
+    return fetch_reservoirs()
 
 
-data = load_data()
-monthly = monthly_measurements(data)
-month_options = list(monthly.index)
-month_labels = [month.strftime("%Y-%m") for month in month_options]
+@st.cache_data(ttl=86400)
+def load_names() -> dict:
+    return fetch_area_names()
 
-selected_label = st.selectbox(
-    "Which column should be plotted?",
-    options=["All measurement columns", *MEASUREMENT_COLUMNS],
-    format_func=lambda value: value
-    if value == "All measurement columns"
-    else DISPLAY_NAMES[value],
+
+try:
+    all_data = load_data()
+except Exception as exc:
+    st.error(f"Could not read NVE data: {exc}")
+    st.stop()
+try:
+    names = load_names()
+except Exception:
+    names = {}
+
+# NVE's endpoint has no date query parameters. The slider controls rows in
+# the plot and the user's CSV download, not the server's API transfer.
+available_months = pd.date_range(all_data["date"].min().to_period("M").to_timestamp(),
+                                 all_data["date"].max().to_period("M").to_timestamp(), freq="MS")
+options = [month.strftime("%Y-%m") for month in available_months]
+start_label, end_label = st.select_slider(
+    "Download interval (inclusive months)", options=options,
+    value=(options[max(0, len(options) - 24)], options[-1]),
 )
+start = pd.Timestamp(f"{start_label}-01")
+end = pd.Timestamp(f"{end_label}-01") + pd.offsets.MonthEnd(1)
+filtered = all_data[all_data["date"].between(start, end)]
+area_type = st.radio("Area type", ["EL", "NO", "VASS"], horizontal=True)
+measurement = st.selectbox("Measurement", list(DISPLAY_NAMES),
+                           format_func=lambda value: DISPLAY_NAMES[value])
+subset = filtered[filtered["area_type"] == area_type]
+monthly = area_series(subset, area_type, measurement, names, monthly=True)
+if monthly.empty:
+    st.warning("No data for this selection.")
+    st.stop()
 
-selected_end_label = st.select_slider(
-    "Show data from the first month up to:",
-    options=month_labels,
-    value=month_labels[0],
-)
-selected_end = pd.Timestamp(selected_end_label + "-01")
-
-st.caption(f"Selected period: {month_labels[0]} to {selected_end_label}")
-figure = make_measurement_plot(
-    monthly,
-    selected_label,
-    start_month=month_options[0],
-    end_month=selected_end,
-)
-st.pyplot(figure, use_container_width=True)
-
+fig, ax = plt.subplots(figsize=(11, 5))
+for column in monthly:
+    ax.plot(monthly.index, monthly[column], label=column, linewidth=1.8)
+ax.set(title=f"{DISPLAY_NAMES[measurement]} by {area_type} area",
+       xlabel="Month", ylabel=DISPLAY_NAMES[measurement])
+ax.grid(alpha=0.25)
+ax.legend(loc="best", fontsize=8, ncol=2)
+fig.autofmt_xdate()
+fig.tight_layout()
+st.pyplot(fig, use_container_width=True)
+st.caption(f"{len(subset):,} weekly rows in the selected download interval.")
+st.download_button("Download selected NVE rows (CSV)",
+                   subset.to_csv(index=False).encode("utf-8"),
+                   file_name=f"nve_{area_type}_{start_label}_{end_label}.csv",
+                   mime="text/csv")
+st.caption("The public NVE endpoint returns the complete dataset; this control filters the "
+           "rows used for the chart and CSV download after the API response.")
