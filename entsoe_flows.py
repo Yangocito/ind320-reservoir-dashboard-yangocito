@@ -6,6 +6,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree as ET
+from http.client import RemoteDisconnected
 
 import pandas as pd
 
@@ -145,7 +146,7 @@ def fetch_physical_flows(token: str, start: pd.Timestamp, end: pd.Timestamp,
                             break
                         if exc.code not in (429, 500, 502, 503, 504) or attempt == 2:
                             raise RuntimeError(f"ENTSO-E HTTP {exc.code} for {connection}, {direction}") from exc
-                    except URLError:
+                    except (URLError, RemoteDisconnected, TimeoutError, ConnectionResetError):
                         if attempt == 2:
                             raise
                     time.sleep(2 ** attempt)
