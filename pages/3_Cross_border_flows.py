@@ -6,6 +6,7 @@ import streamlit as st
 
 st.title("Cross-border physical flows")
 st.caption("Daily transferred energy from ENTSO-E data prepared by the local notebook.")
+st.set_page_config(layout="wide")
 
 
 def mongo_uri() -> str | None:
