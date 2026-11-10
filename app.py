@@ -13,12 +13,12 @@ st.title("IND320: Reservoir data dashboard")
 st.subheader("Data to decision – compulsory project work")
 st.write(
     "Explore Norwegian reservoir statistics from NVE's public API and "
-    "cross-border electricity flows from ENTSO-E through MongoDB."
+    "cross-border electricity flows from ENTSO-E through MongoDB, and historical ERA5 weather."
 )
 
 st.info(
     "Start with **Data table** or **Plots** to explore NVE's areas. "
-    "Open **Cross-border flows** to compare imports and exports."
+    "Open **Cross-border flows** to compare imports and exports, **Reservoir patterns** for seasonal analysis, or **Weather anomalies** for unusual precipitation and temperature."
 )
 
 
