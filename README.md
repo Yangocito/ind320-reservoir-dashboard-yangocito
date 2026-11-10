@@ -97,3 +97,37 @@ version, before recording the screencast.
 
 - [GitHub project branch](https://github.com/Yangocito/ind320-reservoir-dashboard-yangocito/tree/part-2-apis-databases)
 - [Streamlit app](https://ind320-reservoir-dashboard-yangocito-jqlwog89hlllmliwtrhsmd.streamlit.app/)
+
+## Part 3: weather and reservoir patterns
+
+Open `IND320_part3_weather_analysis.ipynb` from the project folder, install
+`requirements-notebook.txt` and run all cells. The NO3 example covers all
+8,784 hours in 2024. Its first Open-Meteo run can take several minutes.
+Completed batches are cached in the ignored `.weather-cache/` directory.
+If Open-Meteo throttles requests, rerun after its quota resets and completed
+batches will be reused. Export the executed notebook to PDF from Jupyter.
+
+The two new Streamlit pages share an area selector. **Reservoir patterns**
+uses the NVE API for STL and a spectrogram. **Weather anomalies** downloads
+ERA5 data on demand, then offers DCT/SPC and LOF controls without downloading
+again for every parameter change. It accepts a 2–60 day window for interactive
+use. The notebook performs the full-year analysis.
+
+The shapefiles in `data/regions` include official NVE price area polygons
+and administrative region polygons. The latter follow the codes in the
+assignment and approximate the reservoir catchment boundaries. See the source
+notes bundled with the shapefiles.
+
+### Screencast outline (about five minutes)
+
+1. **0:00–0:40** Open the existing app URL and point out the existing NVE and
+   ENTSO-E pages. Show where the two analysis pages fit.
+2. **0:40–1:45** Open Reservoir patterns. Select NO3, explain the four STL
+   panels, then change the spectrogram window and point out annual cycles.
+3. **1:45–3:00** Open Weather anomalies with NO3 still selected. Show the
+   prepared download, the two control lines and red flags in SPC, then switch
+   to LOF and change the anomaly proportion.
+4. **3:00–4:30** Open the notebook. Explain the 1,000 locations, weighted
+   ERA5 grid cells, 2024 hourly series and reuse of the analysis functions.
+5. **4:30–5:00** Show the log, AI-use note and repository links. Add the
+   accessible Panopto link to Canvas or the notebook before submitting.
