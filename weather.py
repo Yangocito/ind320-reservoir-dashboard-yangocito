@@ -22,8 +22,7 @@ VARIABLES = ("temperature_2m", "precipitation", "relative_humidity_2m")
 REGION_PARTS = {
     "VASS1": ("RS", "RØ"),
     "VASS2": ("RV",),
-    "VASS3": ("RM",),
-    "VASS4": ("RN",),
+    "VASS3": ("RM", "RN"),
     "NORWAY": ("RS", "RØ", "RV", "RM", "RN"),
 }
 PRICE_AREAS = tuple(f"NO{i}" for i in range(1, 6))
