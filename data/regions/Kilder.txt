@@ -1,0 +1,4 @@
+Kartlag eksportert fra NVEs karttjeneste og konvertert til shapefile (WGS84, EPSG:4326).
+Elspotområder (NO1–NO5): https://gis3.nve.no/map/rest/services/Mapservices/Omradekonsesjoner/MapServer/8
+Forvaltningsområder (RS, RØ, RV, RM, RN): https://gis3.nve.no/map/rest/services/Mapservices/Administrasjon2/MapServer/0
+Forvaltningsområdene har regionkodene i oppgaven. Det er ikke verifisert at grensene er identiske med Magasinstatistikkens nedbørområder.
