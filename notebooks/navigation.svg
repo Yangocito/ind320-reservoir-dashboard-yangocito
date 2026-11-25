@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="248" viewBox="0 0 840 248">
+<rect width="840" height="248" rx="14" fill="#e9f4f5"/>
+<g fill="#ffffff" stroke="#569394"><rect x="30" y="22" width="780" height="57" rx="8"/><rect x="30" y="106" width="268" height="120" rx="8"/><rect x="314" y="106" width="279" height="120" rx="8"/><rect x="609" y="106" width="201" height="120" rx="8"/></g>
+<g fill="#133437" font-family="sans-serif" font-size="14">
+<text x="49" y="48" font-size="18" font-weight="bold">Overview: map and shared controls</text><text x="49" y="68">Area selection, end date and forecast months follow you between pages.</text>
+<text x="49" y="134" font-size="17" font-weight="bold">Explore</text><text x="49" y="158">Reservoir data: charts + table</text><text x="49" y="182">Cross-border flows</text><text x="49" y="206">Exchange rates</text>
+<text x="332" y="134" font-size="17" font-weight="bold">Analyse</text><text x="332" y="158">Reservoir patterns: STL + spectrum</text><text x="332" y="182">Weather anomalies: SATV + LOF</text><text x="332" y="206">Weather and filling: lag correlation</text>
+<text x="627" y="134" font-size="17" font-weight="bold">Predict</text><text x="627" y="158">Filling forecast</text><text x="627" y="182">History, lags, variables</text><text x="627" y="206">Animated forecast</text>
+</g></svg>

@@ -1,35 +1,26 @@
-"""Home page for the IND320 reservoir dashboard."""
+"""IND320 reservoir dashboard navigation and shared controls."""
 
 import streamlit as st
 
+from src.analysis_ui import shared_controls
+from src.views import correlation_page, forecast_page, fx_page, overview
+from src.views import patterns_page, reservoirs_page, weather_page
 
-st.set_page_config(
-    page_title="IND320 Reservoir Dashboard",
-    page_icon="💧",
-    layout="wide",
-)
-
-st.title("IND320: Reservoir data dashboard")
-st.subheader("Data to decision – compulsory project work")
-st.write(
-    "Explore Norwegian reservoir statistics from NVE's public API and "
-    "cross-border electricity flows from ENTSO-E through MongoDB, and historical ERA5 weather."
-)
-
-st.info(
-    "Start with **Data table** or **Plots** to explore NVE's areas. "
-    "Open **Cross-border flows** to compare imports and exports, **Reservoir patterns** for seasonal analysis, or **Weather anomalies** for unusual precipitation and temperature."
-)
-
-
-
-  
-st.markdown("### Project overview")
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Reservoir source", "NVE API")
-with col2:
-    st.metric("Flow source", "ENTSO-E")
-with col3:
-    st.metric("Stored flow data", "MongoDB")
-
+st.set_page_config(page_title="IND320 Reservoir Dashboard", page_icon="💧", layout="wide")
+shared_controls()
+navigation = st.navigation({
+    "Project": [st.Page(overview, title="Overview and map", default=True)],
+    "Explore": [
+        st.Page(reservoirs_page, title="Reservoir data"),
+        st.Page("pages/flows.py", title="Cross-border flows"),
+        st.Page(fx_page, title="Exchange rates"),
+    ],
+    "Analyse": [
+        st.Page(patterns_page, title="Reservoir patterns"),
+        st.Page(weather_page, title="Weather anomalies"),
+        st.Page(correlation_page, title="Weather and filling"),
+    ],
+    "Predict": [st.Page(forecast_page, title="Filling forecast")],
+    "Information": [st.Page("pages/about.py", title="About the project")],
+})
+navigation.run()

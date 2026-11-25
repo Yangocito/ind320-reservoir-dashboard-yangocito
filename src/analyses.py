@@ -18,8 +18,8 @@ def _weather_series(series):
     return series
 
 
-def precipitation_spc(precipitation, cutoff_days=30, deviations=4.0):
-    """Plot raw precipitation with time-varying limits estimated from DCT residuals."""
+def precipitation_control_data(precipitation, cutoff_days=30, deviations=4.0):
+    """Compute precipitation control limits from DCT residuals."""
     series = _weather_series(precipitation)
     if cutoff_days <= 0 or deviations <= 0:
         raise ValueError("The cutoff period and number of deviations must be positive.")
@@ -41,8 +41,17 @@ def precipitation_spc(precipitation, cutoff_days=30, deviations=4.0):
     baseline = series.to_numpy() - residual
     lower, upper = baseline + center - deviations * sigma, baseline + center + deviations * sigma
 
-    details = pd.DataFrame({"precipitation_mm": series, "lower_limit": lower, "upper_limit": upper})
-    details = details.loc[flagged]
+    frame = pd.DataFrame({"precipitation_mm": series, "lower_limit": lower,
+                          "upper_limit": upper, "flagged": flagged})
+    return frame, sigma
+
+
+def precipitation_spc(precipitation, cutoff_days=30, deviations=4.0):
+    """Keep the static Part 3 notebook chart using shared SPC results."""
+    frame, sigma = precipitation_control_data(precipitation, cutoff_days, deviations)
+    series = frame.precipitation_mm
+    lower, upper = frame.lower_limit, frame.upper_limit
+    details = frame.loc[frame.flagged].drop(columns="flagged")
     fig, ax = plt.subplots(figsize=(11, 4))
     ax.plot(series.index, series, lw=0.8, label="Mean precipitation")
     ax.plot(series.index, upper, color="#9a5800", lw=0.9, label="Robust SPC limits")
@@ -63,16 +72,11 @@ def temperature_lof(temperature, proportion=0.01):
     if not 0 < proportion <= 0.5:
         raise ValueError("The outlier proportion must be above zero and at most 0.5.")
     index = series.index
-    year_angle = 2 * np.pi * (index.dayofyear - 1) / np.where(index.is_leap_year, 366, 365)
-    hour_angle = 2 * np.pi * index.hour / 24
-    # Cyclic features keep December close to January and 23:00 close to 00:00.
-    features = np.column_stack([series, np.sin(year_angle), np.cos(year_angle),
-                                np.sin(hour_angle), np.cos(hour_angle)])
-    features = StandardScaler().fit_transform(features)
-    lof = LocalOutlierFactor(n_neighbors=min(40, len(series) - 1), contamination=proportion)
-    flagged = lof.fit_predict(features) == -1
-    details = pd.DataFrame({"temperature_c": series, "lof_score": -lof.negative_outlier_factor_})
-    details = details.loc[flagged].sort_values("lof_score", ascending=False)
+    results = weather_lof(series, proportion)
+    flagged = results["Flagged"].to_numpy()
+    details = results.loc[flagged, ["Observed", "LOF score"]].rename(
+        columns={"Observed": "temperature_c", "LOF score": "lof_score"}
+    ).sort_values("lof_score", ascending=False)
 
     fig, ax = plt.subplots(figsize=(11, 4))
     ax.plot(index, series, lw=0.8, label="Mean temperature")
@@ -141,3 +145,47 @@ def filling_spectrogram(series, window=156, overlap=117):
     fig.colorbar(image, ax=ax, label="Power spectral density (dB re 1 percentage point² per cycle/week)")
     fig.tight_layout()
     return fig
+
+
+def sparse_tv(series, tv_strength=2.0, sparse_strength=2.5, iterations=160):
+    """Fit x + s to observations with TV on the signal x and L1 on sparse s."""
+    from scipy.linalg import solve_banded
+
+    series = _weather_series(series)
+    values = series.to_numpy()
+    scale = max(float(np.std(np.diff(values))), 1e-6)
+    signal = values.copy()
+    differences = np.diff(signal)
+    dual = np.zeros_like(differences)
+    sparse = np.zeros_like(signal)
+    bands = np.zeros((3, len(signal)))
+    bands[1] = 3
+    bands[1, [0, -1]] = 2
+    bands[0, 1:] = bands[2, :-1] = -1
+
+    def soft(value, threshold):
+        return np.sign(value) * np.maximum(np.abs(value) - threshold, 0)
+
+    for _ in range(iterations):
+        difference_dual = differences - dual
+        transpose = np.r_[0, difference_dual] - np.r_[difference_dual, 0]
+        signal = solve_banded((1, 1), bands, values - sparse + transpose)
+        sparse = soft(values - signal, sparse_strength * scale)
+        gradient = np.diff(signal)
+        differences = soft(gradient + dual, tv_strength * scale)
+        dual += gradient - differences
+    return pd.DataFrame({"Observed": values, "SATV baseline": signal, "Sparse component": sparse},
+                        index=series.index)
+
+
+def weather_lof(series, proportion=0.01):
+    """Use the selected variable and circular hour/year as LOF features."""
+    series = _weather_series(series)
+    index = series.index
+    year = 2 * np.pi * (index.dayofyear - 1) / np.where(index.is_leap_year, 366, 365)
+    hour = 2 * np.pi * index.hour / 24
+    features = np.column_stack([series, np.sin(year), np.cos(year), np.sin(hour), np.cos(hour)])
+    model = LocalOutlierFactor(n_neighbors=min(40, len(series) - 1), contamination=proportion)
+    flagged = model.fit_predict(StandardScaler().fit_transform(features)) == -1
+    return pd.DataFrame({"Observed": series, "LOF score": -model.negative_outlier_factor_,
+                         "Flagged": flagged}, index=index)

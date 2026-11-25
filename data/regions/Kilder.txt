@@ -2,3 +2,7 @@ Kartlag eksportert fra NVEs karttjeneste og konvertert til shapefile (WGS84, EPS
 Elspotområder (NO1–NO5): https://gis3.nve.no/map/rest/services/Mapservices/Omradekonsesjoner/MapServer/8
 Forvaltningsområder (RS, RØ, RV, RM, RN): https://gis3.nve.no/map/rest/services/Mapservices/Administrasjon2/MapServer/0
 Forvaltningsområdene har regionkodene i oppgaven. Det er ikke verifisert at grensene er identiske med Magasinstatistikkens nedbørområder.
+GeoJSON-lagene for del 4 bruker de samme kildene. Prisområdene konverteres
+ett for ett. VASS1 = RS + RØ, VASS2 = RV, VASS3 = RM + RN. Landslaget er
+unionen av forvaltningsområdene. Geometrien er forenklet med en toleranse
+på 0,007 grader for å redusere overføringen til nettleseren.
