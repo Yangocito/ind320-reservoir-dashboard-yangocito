@@ -1,6 +1,6 @@
-# IND320 Reservoir Dashboard – part 2
+# IND320 Reservoir Dashboard
 
-This project extends the existing Streamlit app and local notebook. The app
+This project includes four notebooks and an interactive dashboard. The app
 fetches current reservoir statistics from [NVE](https://biapi.nve.no/magasinstatistikk/swagger/index.html).
 The locally run notebook fetches two years of [ENTSO-E physical flows](https://transparencyplatform.zendesk.com/hc/en-us/articles/16583889683476-Physical-Flows-12-1-G),
 writes market periods to Cassandra using Spark, reads/aggregates them in
@@ -20,7 +20,7 @@ with Scala 2.12. If the installed Spark/Scala versions differ, set
     .\.venv\Scripts\python.exe -m pip install -r requirements-notebook.txt
     .\.venv\Scripts\python.exe -m ipykernel install --user --name ind320-py311 --display-name "IND320 Python 3.11"
 
-Open `IND320_reservoirs_analysis.ipynb` in your existing Jupyter/VS Code
+Open `notebooks/IND320_part2_apis_databases.ipynb` in your existing Jupyter/VS Code
 installation and choose that kernel. PowerShell activation is not required.
 
 In Jupyter, select **IND320 Python 3.11** as the kernel. You need Java and a
@@ -47,17 +47,17 @@ The notebook deliberately contains no invented execution output. Update the
 sections. Add the screencast URL,
 then export the executed notebook:
 
-    jupyter nbconvert --to html IND320_reservoirs_analysis.ipynb
+    jupyter nbconvert --to html notebooks/IND320_part2_apis_databases.ipynb
 
 For the PDF, use Jupyter's **Print → Save as PDF** on the HTML file, or
-`jupyter nbconvert --to webpdf IND320_reservoirs_analysis.ipynb` if
+`jupyter nbconvert --to webpdf notebooks/IND320_part2_apis_databases.ipynb` if
 Playwright/Chromium is installed. Check that code outputs and every plot are
 visible in the PDF before uploading it to Canvas.
 
 ## Run and deploy Streamlit
 
-For the local app, copy `.streamlit/secrets.example.toml` to
-`.streamlit/secrets.toml` and replace its placeholder URI. For Streamlit
+For the local app, create `.streamlit/secrets.toml` with your private
+`MONGODB_URI`. For Streamlit
 Community Cloud, paste just `MONGODB_URI = "..."` into **App settings →
 Secrets**. The MongoDB user needs read access to `ind320.flows_daily`, and
 the cluster's network access must permit the deployed app.
@@ -71,63 +71,40 @@ the CSV download **after** the API request. The CSV from part 1 is removed.
 The app uses EL, NO and VASS independently and provides one line/sparkline
 for each area number.
 
-## Submission branch and screencast
-
-Make a new branch in the original repository (for example
-`part-2-apis-databases`), commit this code and the **one** notebook, and
-push the branch. Keep `main` unchanged until the reviews are complete.
-The app must be deployed from this branch for the reviewer to see the new
-pages. The five-minute screencast should show the reservoir controls, the
-MongoDB flow page, and the API → Cassandra → Spark → MongoDB code path.
-Place its shareable URL in the notebook or in the Canvas submission comment.
-
-In your local repository, create the branch **before** copying in the ZIP
-contents:
-
-    git switch -c part-2-apis-databases
-    # Copy the ZIP's project contents over the corresponding repo files.
-    git add -A
-    git commit -m "Build IND320 part 2 API and database dashboard"
-    git push -u origin part-2-apis-databases
-
-Check that Streamlit is deploying this branch, rather than the old main
-version, before recording the screencast.
-
 ## Project links
 
-- [GitHub project branch](https://github.com/Yangocito/ind320-reservoir-dashboard-yangocito/tree/part-2-apis-databases)
+- [Public GitHub repository](https://github.com/Yangocito/ind320-reservoir-dashboard-yangocito)
 - [Streamlit app](https://ind320-reservoir-dashboard-yangocito-jqlwog89hlllmliwtrhsmd.streamlit.app/)
 
 ## Part 3: weather and reservoir patterns
 
-Open `IND320_part3_weather_analysis.ipynb` from the project folder, install
+Open `notebooks/IND320_part3_weather_analysis.ipynb` from the project folder, install
 `requirements-notebook.txt` and run all cells. The NO3 example covers all
 8,784 hours in 2024. Its first Open-Meteo run can take several minutes.
 Completed batches are cached in the ignored `.weather-cache/` directory.
 If Open-Meteo throttles requests, rerun after its quota resets and completed
 batches will be reused. Export the executed notebook to PDF from Jupyter.
 
-The two new Streamlit pages share an area selector. **Reservoir patterns**
-uses the NVE API for STL and a spectrogram. **Weather anomalies** downloads
-ERA5 data on demand, then offers DCT/SPC and LOF controls without downloading
-again for every parameter change. It accepts a 2–60 day window for interactive
-use. The notebook performs the full-year analysis.
-
 The shapefiles in `data/regions` include official NVE price area polygons
 and administrative region polygons. The latter follow the codes in the
 assignment and approximate the reservoir catchment boundaries. See the source
 notes bundled with the shapefiles.
 
-### Screencast outline (about five minutes)
+## Part 4: interactive explorer and filling forecasts
 
-1. **0:00–0:40** Open the existing app URL and point out the existing NVE and
-   ENTSO-E pages. Show where the two analysis pages fit.
-2. **0:40–1:45** Open Reservoir patterns. Select NO3, explain the four STL
-   panels, then change the spectrogram window and point out annual cycles.
-3. **1:45–3:00** Open Weather anomalies with NO3 still selected. Show the
-   prepared download, the two control lines and red flags in SPC, then switch
-   to LOF and change the anomaly proportion.
-4. **3:00–4:30** Open the notebook. Explain the 1,000 locations, weighted
-   ERA5 grid cells, 2024 hourly series and reuse of the analysis functions.
-5. **4:30–5:00** Show the log, AI-use note and repository links. Add the
-   accessible Panopto link to Canvas or the notebook before submitting.
+The dashboard shares the selected region, date and forecast horizon across
+pages. The map can use price, approximate water-area or national outlines.
+Choose a weather field to colour it with the selected week's regional weather.
+The River forecast can use weekly or monthly filling, with optional historical
+weather and EUR/USD exchange rates. The notebook compares both resolutions
+using future month-ending observations held out at each forecast origin.
+
+All four notebooks are in `notebooks/`. Shared Python modules are in `src/`.
+Run Part 4 from the repository or notebooks folder. Export the executed
+notebook with:
+
+    jupyter nbconvert --to html notebooks/IND320_part4_forecasting.ipynb
+
+Use the temporary `part-4-forecasting` branch for review. In Streamlit, use
+`app.py` from that branch and the existing MongoDB connection secret. Merge
+into `main` after peer review and teacher feedback.

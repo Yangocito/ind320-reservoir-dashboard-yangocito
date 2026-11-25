@@ -1,12 +1,13 @@
 """MongoDB-backed ENTSO-E cross-border transfer charts."""
 
-import matplotlib.pyplot as plt
+import plotly.express as px
 import pandas as pd
 import streamlit as st
 
+from src.analysis_ui import show_plot
+
 st.title("Cross-border physical flows")
 st.caption("Daily transferred energy from ENTSO-E data prepared by the local notebook.")
-st.set_page_config(layout="wide")
 
 
 def mongo_uri() -> str | None:
@@ -60,11 +61,10 @@ with left:
     totals = annual.groupby("direction")["energy_mwh"].sum()
     values = [float(totals.get("Into Norway", 0)), float(totals.get("Out of Norway", 0))]
     if sum(values) > 0:
-        fig, ax = plt.subplots(figsize=(5, 4))
-        ax.pie(values, labels=["Into Norway", "Out of Norway"], autopct="%1.1f%%",
-               colors=["#0f766e", "#e69f38"], startangle=90)
-        ax.set_title(f"{connection}, {year} (MWh transferred)")
-        st.pyplot(fig, use_container_width=True)
+        fig = px.pie(names=["Into Norway", "Out of Norway"], values=values,
+                     title=f"{connection}, {year} (MWh transferred)",
+                     color_discrete_sequence=["#087e86", "#df8e33"])
+        show_plot(fig)
         st.caption(f"Into Norway: {values[0]:,.0f} MWh · Out of Norway: {values[1]:,.0f} MWh")
     else:
         st.warning("No positive transferred energy for this connection/year.")

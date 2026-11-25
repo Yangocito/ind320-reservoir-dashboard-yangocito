@@ -15,8 +15,8 @@ import pandas as pd
 import shapefile
 from matplotlib.path import Path as PolygonPath
 
-REGION_DIR = Path(__file__).resolve().parent / "data" / "regions"
-CACHE_DIR = Path(__file__).resolve().parent / ".weather-cache"
+REGION_DIR = Path(__file__).resolve().parents[1] / "data" / "regions"
+CACHE_DIR = Path(__file__).resolve().parents[1] / ".weather-cache"
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 VARIABLES = ("temperature_2m", "precipitation", "relative_humidity_2m")
 REGION_PARTS = {
@@ -162,3 +162,64 @@ def download_weather(region, start_date, end_date, locations_by_region=None, bat
     frame = pd.DataFrame(averaged, columns=VARIABLES, index=index.rename("time_utc"))
     frame.attrs.update(region=region, sampled_locations=len(locations), era5_cells=len(cells))
     return frame
+
+
+def daily_weather(region, start, end, timezone="Europe/Oslo"):
+    """Average six reproducibly sampled ERA5 cells for interactive daily work.
+
+    This lighter sample is for Part 4 charts and predictors. The full 1,000
+    location design remains in the Part 3 notebook for hourly analyses.
+    """
+    start = pd.Timestamp(start).normalize()
+    end = pd.Timestamp(end).normalize()
+    if end < start:
+        raise ValueError("The weather interval is empty.")
+    daily_names = {
+        "temperature_2m": "temperature_2m_mean",
+        "precipitation": "precipitation_sum",
+        "relative_humidity_2m": "relative_humidity_2m_mean",
+    }
+    points = sample_locations(count=6, regions=[region])[region]
+    coordinates = list(dict.fromkeys(grid_weights(points)))
+    weights = grid_weights(points)
+    pieces = []
+    for year in range(start.year, end.year + 1):
+        first = max(start, pd.Timestamp(year, 1, 1))
+        last = min(end, pd.Timestamp(year, 12, 31))
+        query = urlencode({
+            "longitude": ",".join(str(lon) for lon, _ in coordinates),
+            "latitude": ",".join(str(lat) for _, lat in coordinates),
+            "start_date": str(first.date()), "end_date": str(last.date()),
+            "daily": ",".join(daily_names.values()), "timezone": timezone,
+            "models": "era5", "cell_selection": "nearest",
+            "elevation": ",".join(["nan"] * len(coordinates)),
+        })
+        CACHE_DIR.mkdir(exist_ok=True)
+        filename = CACHE_DIR / (hashlib.sha256(query.encode()).hexdigest() + ".json")
+        try:
+            payload = json.loads(filename.read_bytes())
+        except (FileNotFoundError, json.JSONDecodeError):
+            with urlopen(f"{ARCHIVE_URL}?{query}", timeout=45) as response:
+                payload = json.load(response)
+            with NamedTemporaryFile(mode="w", dir=CACHE_DIR, delete=False) as temp:
+                json.dump(payload, temp)
+            Path(temp.name).replace(filename)
+        items = payload if isinstance(payload, list) else [payload]
+        if len(items) != len(coordinates):
+            raise ValueError("Open-Meteo returned an unexpected number of grid cells.")
+        dates = pd.date_range(first, last, freq="D")
+        row_values = []
+        for item in items:
+            daily = item["daily"]
+            if not pd.DatetimeIndex(pd.to_datetime(daily["time"])).equals(dates):
+                raise ValueError("Open-Meteo returned an incomplete calendar.")
+            row_values.append(np.column_stack([np.asarray(daily[key], dtype=float)
+                                               for key in daily_names.values()]))
+        values = np.stack(row_values)
+        cell_weights = np.array([weights[point] for point in coordinates])[:, None, None]
+        available = np.isfinite(values)
+        counts = (available * cell_weights).sum(axis=0)
+        totals = (np.where(available, values, 0) * cell_weights).sum(axis=0)
+        averages = np.divide(totals, counts, out=np.full_like(totals, np.nan), where=counts > 0)
+        pieces.append(pd.DataFrame(averages, index=dates, columns=list(daily_names)))
+    return pd.concat(pieces)
