@@ -96,7 +96,7 @@ def overview():
                           line_joint_rounded=True, pickable=True)],
         initial_view_state=pdk.ViewState(latitude=64.7, longitude=14.5, zoom=3.6),
         map_style="light",
-        tooltip={"text": "{properties.label}\n{properties.observation}"},
+        tooltip={"text": "{label}\n{observation}"},
     )
     def select_region():
         state = st.session_state["region_map"]
