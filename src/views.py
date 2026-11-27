@@ -91,8 +91,9 @@ def overview():
     deck = pdk.Deck(
         layers=[pdk.Layer("GeoJsonLayer", id="reservoir_regions", data=geojson,
                           get_fill_color="properties.fill", get_line_color="properties.outline",
-                          get_line_width="properties.width", line_width_units="pixels",
-                          line_width_min_pixels=1, pickable=True)],
+                          get_line_width="properties.width", line_width_units=pdk.types.String("pixels"),
+                          line_width_min_pixels=1, line_width_max_pixels=4,
+                          line_joint_rounded=True, pickable=True)],
         initial_view_state=pdk.ViewState(latitude=64.7, longitude=14.5, zoom=3.6),
         map_style="light",
         tooltip={"text": "{properties.label}\n{properties.observation}"},
